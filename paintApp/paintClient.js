@@ -1,3 +1,6 @@
+const w = window.innerWidth
+const h = window.innerHeight
+
 class Point {
 
     x
@@ -18,6 +21,8 @@ class Shape {
     }
 
     draw(context) {
+        context.lineCap = 'round'
+        context.lineWidth = Math.min(w, h) / 90
         context.beginPath()
         points.forEach((point, index) => {
             if (index == 0) {
@@ -27,5 +32,45 @@ class Shape {
             }
         })
         context.stroke()
+    }
+}
+
+class Stage {
+
+    canvas = document.createElement('canvas')
+    context
+    shapes = []
+    otherShapes = []
+    init() {
+        this.canvas.width = w
+        this.canvas.height = h
+        this.context = this.canvas.getContext('2d')
+        document.body.appendChild(this.canvas)
+    }
+
+    render() {
+        this.context.strokeStyle = '#4CAF50'
+        this.shapes.forEach((shape) => {
+            shape.draw(this.context)
+        })
+        this.context.strokeStyle = '#F44336'
+        this.otherShapes.forEach((shape) => {
+            shape.draw(this.context)
+        })
+    }
+
+    handleTap() {
+        this.canvas.onmousedown = (event) => {
+            const x = event.offsetX
+            const y = event.offsetY
+
+        }
+    }
+
+    static create() {
+        const stage = new Stage()
+        stage.init()
+        stage.render()
+        stage.handleTap()
     }
 }
