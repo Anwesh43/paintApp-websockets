@@ -74,3 +74,27 @@ class Stage {
         stage.handleTap()
     }
 }
+
+class WebsocketHandler {
+
+    ws
+    init() {
+        this.ws = new WebSocket("http://localhost:5000")
+    }
+
+    addMessageHandler(cb) {
+        this.ws.onmessage = (msg) => {
+            const data = msg.data
+            try {
+                const json = JSON.parse(data)
+                cb(json)
+            } catch(e) {
+
+            }
+        }
+    }
+
+    send(msg) {
+        this.ws.send(JSON.stringify(msg))
+    }
+}
