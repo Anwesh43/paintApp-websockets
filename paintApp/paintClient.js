@@ -41,11 +41,36 @@ class Stage {
     context
     shapes = []
     otherShapes = []
+    wsHandler = new WebsocketHandler()
+    touchHandler : TouchHandler = new TouchHandler()
+
     init() {
         this.canvas.width = w
         this.canvas.height = h
         this.context = this.canvas.getContext('2d')
         document.body.appendChild(this.canvas)
+        this.wsHandler.addMessageHandler((msg) => {
+            if (msg.type === "START") {
+                const shape = new Shape()
+                shape.addPoint(msg.x, msg.y)
+                this.otherShapes.push(shape)
+            } else {
+                const shape = this.otherShapes[this.otherShapes.length - 1]
+                shape.addPoint(x, y)
+            }
+        })
+        this.touchHandler.handleDraw((x, y) => {
+            const shape = new Shape()
+            shape.addPoint(x, y)
+            this.shapes.push(shape)
+            const type = "START"
+            this.wsHandler.send({x, y, type})
+        }, () => {
+            const shape = this.shapes[this.shapes.length - 1]
+            shape.addPoint(x, y)
+            const type = "MOVE"
+            this.wsHandler.send({x, y, type})
+        })
     }
 
     render() {
