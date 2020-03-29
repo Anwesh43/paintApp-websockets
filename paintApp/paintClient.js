@@ -98,3 +98,37 @@ class WebsocketHandler {
         this.ws.send(JSON.stringify(msg))
     }
 }
+
+class TouchHandler {
+
+    dom
+    down = false
+    constructor(dom) {
+        this.dom = dom
+    }
+
+    handleDraw(downcb, movecb) {
+        this.dom.onmousedown = (event) => {
+            if (!this.down) {
+                this.down = true
+                const x = event.offsetX
+                const y = event.offsetY
+                downcb(x, y)
+            }
+        }
+
+        this.dom.onmousemove = (event) => {
+            if (this.down) {
+                const x = event.offsetX
+                const y = event.offsetY
+                movecb(x, y)
+            }
+        }
+
+        this.dom.onmouseup = () => {
+            if (this.down) {
+                this.down = false
+            }
+        }
+    }
+}
