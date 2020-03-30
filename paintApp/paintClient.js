@@ -15,16 +15,15 @@ class Shape {
 
     points = []
 
-    addPoint(x, y, cb) {
-        points.push(new Point(x, y))
-        cb()
+    addPoint(x, y) {
+        this.points.push(new Point(x, y))
     }
 
     draw(context) {
         context.lineCap = 'round'
         context.lineWidth = Math.min(w, h) / 90
         context.beginPath()
-        points.forEach((point, index) => {
+        this.points.forEach((point, index) => {
             if (index == 0) {
                 context.moveTo(point.x, point.y)
             } else {
@@ -42,13 +41,14 @@ class Stage {
     shapes = []
     otherShapes = []
     wsHandler = new WebsocketHandler()
-    touchHandler : TouchHandler = new TouchHandler()
+    touchHandler = new TouchHandler(this.canvas)
 
     init() {
         this.canvas.width = w
         this.canvas.height = h
         this.context = this.canvas.getContext('2d')
         document.body.appendChild(this.canvas)
+        this.wsHandler.init()
         this.wsHandler.addMessageHandler((msg) => {
             if (msg.type === "START") {
                 const shape = new Shape()
@@ -56,7 +56,7 @@ class Stage {
                 this.otherShapes.push(shape)
             } else {
                 const shape = this.otherShapes[this.otherShapes.length - 1]
-                shape.addPoint(x, y)
+                shape.addPoint(msg.x, msg.y)
             }
         })
         this.touchHandler.handleDraw((x, y) => {
@@ -65,11 +65,14 @@ class Stage {
             this.shapes.push(shape)
             const type = "START"
             this.wsHandler.send({x, y, type})
-        }, () => {
+        }, (x, y) => {
             const shape = this.shapes[this.shapes.length - 1]
             shape.addPoint(x, y)
             const type = "MOVE"
             this.wsHandler.send({x, y, type})
+        })
+        Loop.start(() => {
+            this.render()
         })
     }
 
@@ -97,6 +100,7 @@ class Stage {
         stage.init()
         stage.render()
         stage.handleTap()
+        return stage
     }
 }
 
@@ -104,7 +108,7 @@ class WebsocketHandler {
 
     ws
     init() {
-        this.ws = new WebSocket("http://localhost:5000")
+        this.ws = new WebSocket("ws://192.168.0.152:5000")
     }
 
     addMessageHandler(cb) {
@@ -133,16 +137,19 @@ class TouchHandler {
     }
 
     handleDraw(downcb, movecb) {
-        this.dom.onmousedown = (event) => {
+        console.log(this.dom)
+        window.onmousedown = (event) => {
+            console.log("down")
             if (!this.down) {
-                this.down = true
+
                 const x = event.offsetX
                 const y = event.offsetY
                 downcb(x, y)
+                this.down = true
             }
         }
 
-        this.dom.onmousemove = (event) => {
+        window.onmousemove = (event) => {
             if (this.down) {
                 const x = event.offsetX
                 const y = event.offsetY
@@ -150,10 +157,19 @@ class TouchHandler {
             }
         }
 
-        this.dom.onmouseup = () => {
+        window.onmouseup = () => {
             if (this.down) {
                 this.down = false
             }
         }
+    }
+}
+
+class Loop {
+
+    static start(cb) {
+        this.interval = setInterval(() => {
+            cb()
+        })
     }
 }
